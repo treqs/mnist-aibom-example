@@ -1,0 +1,4 @@
+data/
+model.pkl
+.roar/
+__pycache__/
