@@ -20,11 +20,11 @@ REGION = os.environ.get("AWS_DEFAULT_REGION", os.environ.get("AWS_REGION", "us-e
 
 # Synthesize a small, deterministic raw dataset.
 os.makedirs("data", exist_ok=True)
-random.seed(0)
+random.seed(42)
 with open("data/mnist_raw.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["pixel_sum", "label"])
-    for _ in range(500):
+    for _ in range(784):  # 28x28 pixels — one row per MNIST pixel position
         w.writerow([random.randint(0, 255 * 784), random.randint(0, 9)])
 
 # Create the bucket (idempotent) and upload the raw dataset.
