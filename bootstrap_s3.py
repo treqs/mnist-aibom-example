@@ -20,7 +20,7 @@ REGION = os.environ.get("AWS_DEFAULT_REGION", os.environ.get("AWS_REGION", "us-e
 
 # Synthesize a small, deterministic raw dataset.
 os.makedirs("data", exist_ok=True)
-random.seed(123)
+random.seed(777)
 with open("data/mnist_raw.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["pixel_sum", "label"])
