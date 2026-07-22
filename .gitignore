@@ -1,4 +1,6 @@
-data/
+# keep the output dir tracked (so reproduction paths exist) but not its contents
+data/*
+!data/.gitkeep
 model.pkl
 .roar/
 __pycache__/
