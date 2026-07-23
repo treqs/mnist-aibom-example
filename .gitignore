@@ -4,3 +4,4 @@ data/*
 model.pkl
 .roar/
 __pycache__/
+.venv/
