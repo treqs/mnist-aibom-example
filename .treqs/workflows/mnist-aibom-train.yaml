@@ -1,0 +1,74 @@
+name: MNIST AI-BOM demo (native lineage)
+
+# Platform-native variant: this workflow does NOT run `roar auth login`,
+# `roar scope use`, or `roar register` in-pod. Publication is decided on the
+# training request itself via `treqs tr create --lineage-mode
+# {private|public|public_anonymous}` — the agent exports the roar session
+# (lineage + labels) and treqs-api republishes it to GLaaS with this project
+# attached, which supplies supplier/author from the project's org. A
+# `roar register` stage is unnecessary (the compiler drops it even if
+# present — see treqs-api's lineage-workflow-compiler.ts).
+#
+# S3 provenance for the AI-BOM `downloadLocation` field: fetch_data.py reads
+# AWS creds from the environment via boto3. Supply them as compute secrets
+# (`treqs compute secrets set AWS_ACCESS_KEY_ID ...` /
+# `AWS_SECRET_ACCESS_KEY`) — listed below so the agent injects them into the
+# traced stages. `roar proxy enable` (in setup) routes the boto3 GetObject
+# through roar's proxy so the fetch is recorded with source_type=s3 /
+# source_url=s3://..., which is what earns the downloadLocation field.
+#
+# One-time prerequisite, NOT part of this workflow: seed the bucket once
+# with `ROAR_DEMO_BUCKET=treqs-mnist-aibom-demo python3 bootstrap_s3.py`
+# from a machine with AWS creds.
+#
+# roar-cli is pinned into the workflow's own .venv rather than assumed to be
+# on the compute target's system PATH — belt-and-suspenders so this workflow
+# still works on a compute target/AMI that doesn't ship roar preinstalled.
+
+secrets:
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+
+setup:
+  command: |
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install --quiet boto3 roar-cli
+    roar --version
+    roar init || true
+    roar config set filters.ignore_tmp_files false
+    roar config set git.push_tags_on_register never
+    roar proxy enable
+  trace: off
+
+fetch:
+  command: |
+    source .venv/bin/activate
+    export ROAR_DEMO_BUCKET="${ROAR_DEMO_BUCKET:-treqs-mnist-aibom-demo}"
+    export ROAR_DEMO_KEY="${ROAR_DEMO_KEY:-mnist_raw.csv}"
+    roar run -- python3 fetch_data.py
+  trace: off
+
+preprocess:
+  command: |
+    source .venv/bin/activate
+    roar run -- python3 preprocess.py
+  trace: off
+
+train:
+  command: |
+    source .venv/bin/activate
+    roar run -- python3 train.py
+  trace: off
+
+label:
+  command: |
+    source .venv/bin/activate
+    roar label set artifact model.pkl \
+      description="MNIST CNN digit classifier — TReqs AI-BOM demo" \
+      license.id=MIT \
+      license.name="MIT License" \
+      documentation.url="https://github.com/treqs/mnist-aibom-example/blob/main/MODEL_CARD.md" \
+      model.name=mnist-cnn \
+      model.version=1.0
+  trace: off
