@@ -1,0 +1,11 @@
+[context]
+api_url = "https://api.treqs.ai"
+owner_id = "e764587d-276e-4af6-af35-63f5b8d168ba"
+owner_type = "organization"
+owner_username = "treqs"
+owner_display_name = "treqs"
+project_id = "ccc6e648-ef63-48b0-890d-76774e574f56"
+project_slug = "mnist-aibom-example"
+project_name = "mnist-aibom-example"
+current_username = "jon"
+saved_at = "2026-07-23T15:59:02.874762Z"
