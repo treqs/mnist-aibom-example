@@ -21,9 +21,12 @@ name: MNIST AI-BOM demo (native lineage)
 # with `ROAR_DEMO_BUCKET=treqs-mnist-aibom-demo python3 bootstrap_s3.py`
 # from a machine with AWS creds.
 #
-# roar-cli is pinned into the workflow's own .venv rather than assumed to be
-# on the compute target's system PATH — belt-and-suspenders so this workflow
-# still works on a compute target/AMI that doesn't ship roar preinstalled.
+# roar-cli/boto3 install straight into the compute target's system Python —
+# no workflow-local venv. This matches the campaign's own validated recipe
+# for this AMI (reproducible-ai-private/aws/ami-bake-spec.md): its system
+# python3 ships without `ensurepip`/`python3-venv`, so `python3 -m venv`
+# fails there ("ensurepip is not available"). A venv isn't needed anyway —
+# the only dependency here is boto3 (roar-cli is the CLI tool itself).
 
 secrets:
   - AWS_ACCESS_KEY_ID
@@ -31,8 +34,6 @@ secrets:
 
 setup:
   command: |
-    python3 -m venv .venv
-    source .venv/bin/activate
     pip install --quiet boto3 roar-cli
     roar --version
     roar init || true
@@ -43,7 +44,6 @@ setup:
 
 fetch:
   command: |
-    source .venv/bin/activate
     export ROAR_DEMO_BUCKET="${ROAR_DEMO_BUCKET:-treqs-mnist-aibom-demo}"
     export ROAR_DEMO_KEY="${ROAR_DEMO_KEY:-mnist_raw.csv}"
     roar run -- python3 fetch_data.py
@@ -51,19 +51,16 @@ fetch:
 
 preprocess:
   command: |
-    source .venv/bin/activate
     roar run -- python3 preprocess.py
   trace: off
 
 train:
   command: |
-    source .venv/bin/activate
     roar run -- python3 train.py
   trace: off
 
 label:
   command: |
-    source .venv/bin/activate
     roar label set artifact model.pkl \
       description="MNIST CNN digit classifier — TReqs AI-BOM demo" \
       license.id=MIT \
